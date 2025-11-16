@@ -4,189 +4,229 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Videos Navigator</title>
+
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
   <style>
-    body { background-color: #212529; color: #f8f9fa; }
-    .container { margin-top: 20px; max-width: 900px; }
-    .card {
-      background-color: #2c3034;
-      color: #f8f9fa;
-      border: 1px solid #495057;
-      transition: transform 0.2s ease;
+    body {
+      background: #0f0f0f;
+      color: #e5e5e5;
+      font-family: "Segoe UI", sans-serif;
+    }
+
+    /* ===== Navbar ===== */
+    .top-nav {
+      background: #161616;
+      padding: 15px 20px;
+      border-bottom: 1px solid #333;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .top-title {
+      font-size: 22px;
+      font-weight: bold;
+      color: #00bfff;
+    }
+
+    /* ===== Cards ===== */
+    .cardx {
+      background: #1a1a1a;
+      border: 1px solid #2c2c2c;
+      padding: 18px;
+      margin-bottom: 12px;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 500;
+      transition: 0.2s ease;
       cursor: pointer;
     }
-    .card:hover { transform: scale(1.02); background-color: #343a40; }
-    .back-btn {
-      margin-bottom: 20px;
+    .cardx:hover {
+      background: #222;
+      transform: translateY(-4px);
+      border-color: #00bfff;
     }
-    video { border-radius: 10px; width: 100%; }
+
+    /* ===== Section Titles ===== */
+    h3 {
+      margin-bottom: 18px;
+      font-weight: 600;
+      border-left: 4px solid #00bfff;
+      padding-left: 10px;
+    }
+
+    /* Video container */
+    .video-box {
+      background: #111;
+      padding: 15px;
+      border-radius: 12px;
+      border: 1px solid #292929;
+      margin-bottom: 22px;
+    }
+
+    .video-box h5 {
+      margin-bottom: 10px;
+      color: #00bfff;
+    }
+
+    video {
+      width: 100%;
+      border-radius: 10px;
+    }
+
+    /* Back Button */
+    .back-btn {
+      background: #333;
+      border: 1px solid #444;
+      padding: 8px 18px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+    .back-btn:hover {
+      background: #444;
+    }
+
+    /* Fade Animation */
+    .fade-in {
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
   </style>
 </head>
+
 <body>
-  <div class="container">
-    <h1 class="mb-4 text-center text-primary">Videos</h1>
-    <button id="backBtn" class="btn btn-secondary back-btn d-none">⬅️ Back</button>
-    <div id="content"></div>
+
+  <div class="top-nav">
+    <span class="top-title">🎬 Videos Navigator</span>
+    <button id="backBtn" class="btn btn-warning d-none">⬅ Back</button>
+  </div>
+
+  <div class="container mt-4">
+    <div id="content" class="fade-in"></div>
   </div>
 
   <script>
-  let jsonData;
-  const contentDiv = document.getElementById('content');
-  const backBtn = document.getElementById('backBtn');
-  const historyStack = [];
+    let jsonData;
+    const contentDiv = document.getElementById('content');
+    const backBtn = document.getElementById('backBtn');
+    const historyStack = [];
 
-  // تحميل البيانات
-  fetch('./coursatk_scraped_data.json')
-    .then(res => res.json())
-    .then(data => {
-      jsonData = data.data;
-      showYears();
-    })
-    .catch(err => {
-      contentDiv.innerHTML = `<div class="alert alert-danger">Error loading data: ${err.message}</div>`;
-    });
+    fetch('./coursatk_scraped_data.json')
+      .then(res => res.json())
+      .then(data => {
+        jsonData = data.data;
+        showYears();
+      })
+      .catch(err => {
+        contentDiv.innerHTML = `<div class="alert alert-danger">Error: ${err.message}</div>`;
+      });
 
-  // وظيفة عامة للرجوع
-  backBtn.addEventListener('click', () => {
-    if (historyStack.length > 0) {
-      const prev = historyStack.pop();
-      prev();
+    backBtn.onclick = () => {
+      if (historyStack.length) {
+        const prev = historyStack.pop();
+        prev();
+      }
+      if (!historyStack.length) backBtn.classList.add('d-none');
+    };
+
+    function showYears() {
+      backBtn.classList.add('d-none');
+      contentDiv.innerHTML = `<h3>Select a Year</h3>`;
+      jsonData.forEach(year => {
+        makeCard(year.year_name, () => {
+          historyStack.push(showYears);
+          showSubjects(year);
+          backBtn.classList.remove('d-none');
+        });
+      });
     }
-    if (historyStack.length === 0) backBtn.classList.add('d-none');
-  });
 
-  // عرض السنوات
-  function showYears() {
-    backBtn.classList.add('d-none');
-    contentDiv.innerHTML = '<h3 class="text-info mb-3">Select a Year</h3>';
-    jsonData.forEach(year => {
-      const card = document.createElement('div');
-      card.className = 'card p-3 mb-2';
-      card.textContent = year.year_name;
-      card.onclick = () => {
-        historyStack.push(showYears);
-        showSubjects(year);
-        backBtn.classList.remove('d-none');
-      };
-      contentDiv.appendChild(card);
-    });
-  }
-
-  // عرض المواد
-  function showSubjects(year) {
-    contentDiv.innerHTML = `<h3 class="text-info mb-3">Subjects in ${year.year_name}</h3>`;
-    if (!year.subjects?.length) {
-      contentDiv.innerHTML += '<p class="text-muted">No subjects found.</p>';
-      return;
+    function showSubjects(year) {
+      contentDiv.innerHTML = `<h3>Subjects in ${year.year_name}</h3>`;
+      (year.subjects || []).forEach(subject => {
+        makeCard(subject.subject_name, () => {
+          historyStack.push(() => showSubjects(year));
+          showTeachers(subject);
+        });
+      });
     }
-    year.subjects.forEach(subject => {
-      const card = document.createElement('div');
-      card.className = 'card p-3 mb-2';
-      card.textContent = subject.subject_name;
-      card.onclick = () => {
-        historyStack.push(() => showSubjects(year));
-        showTeachers(subject);
-      };
-      contentDiv.appendChild(card);
-    });
-  }
 
-  // عرض المدرسين
-  function showTeachers(subject) {
-    contentDiv.innerHTML = `<h3 class="text-warning mb-3">Teachers in ${subject.subject_name}</h3>`;
-    if (!subject.teachers?.length) {
-      contentDiv.innerHTML += '<p class="text-muted">No teachers found.</p>';
-      return;
+    function showTeachers(subject) {
+      contentDiv.innerHTML = `<h3>Teachers for ${subject.subject_name}</h3>`;
+      (subject.teachers || []).forEach(teacher => {
+        makeCard(teacher.teacher_name, () => {
+          historyStack.push(() => showTeachers(subject));
+          showChapters(teacher);
+        });
+      });
     }
-    subject.teachers.forEach(teacher => {
-      const card = document.createElement('div');
-      card.className = 'card p-3 mb-2';
-      card.textContent = teacher.teacher_name;
-      card.onclick = () => {
-        historyStack.push(() => showTeachers(subject));
-        showChapters(teacher);
-      };
-      contentDiv.appendChild(card);
-    });
-  }
 
-  // عرض الفصول
-  function showChapters(teacher) {
-    contentDiv.innerHTML = `<h3 class="text-success mb-3">Chapters by ${teacher.teacher_name}</h3>`;
-    if (!teacher.chapters?.length) {
-      contentDiv.innerHTML += '<p class="text-muted">No chapters found.</p>';
-      return;
+    function showChapters(teacher) {
+      contentDiv.innerHTML = `<h3>Chapters by ${teacher.teacher_name}</h3>`;
+      (teacher.chapters || []).forEach(chapter => {
+        makeCard(chapter.chapter_name, () => {
+          historyStack.push(() => showChapters(teacher));
+          showLectures(chapter);
+        });
+      });
     }
-    teacher.chapters.forEach(chapter => {
-      const card = document.createElement('div');
-      card.className = 'card p-3 mb-2';
-      card.textContent = chapter.chapter_name;
-      card.onclick = () => {
-        historyStack.push(() => showChapters(teacher));
-        showLectures(chapter);
-      };
-      contentDiv.appendChild(card);
-    });
-  }
 
-  // عرض المحاضرات
-  function showLectures(chapter) {
-    contentDiv.innerHTML = `<h3 class="text-primary mb-3">Lectures in ${chapter.chapter_name}</h3>`;
-    if (!chapter.lectures?.length) {
-      contentDiv.innerHTML += '<p class="text-muted">No lectures found.</p>';
-      return;
+    function showLectures(chapter) {
+      contentDiv.innerHTML = `<h3>Lectures in ${chapter.chapter_name}</h3>`;
+      (chapter.lectures || []).forEach(lecture => {
+        makeCard(lecture.lecture_name, () => {
+          historyStack.push(() => showLectures(chapter));
+          showVideos(lecture);
+        });
+      });
     }
-    chapter.lectures.forEach(lecture => {
-      const card = document.createElement('div');
-      card.className = 'card p-3 mb-2';
-      card.textContent = lecture.lecture_name;
-      card.onclick = () => {
-        historyStack.push(() => showLectures(chapter));
-        showVideos(lecture);
-      };
-      contentDiv.appendChild(card);
-    });
-  }
 
-  // عرض الفيديوهات
-  function showVideos(lecture) {
-    contentDiv.innerHTML = `<h3 class="text-light mb-3">Videos for ${lecture.lecture_name}</h3>`;
-    if (!lecture.videos?.length) {
-      contentDiv.innerHTML += '<p class="text-muted">No videos found.</p>';
-      return;
-    }
-    lecture.videos.forEach(video => {
-      const div = document.createElement('div');
-      div.className = 'mb-4 p-3 border rounded bg-dark';
-      div.innerHTML = `<h5>${video.video_name}</h5>`;
+    function showVideos(lecture) {
+      contentDiv.innerHTML = `<h3>Videos for ${lecture.lecture_name}</h3>`;
+      (lecture.videos || []).forEach(video => {
+        const box = document.createElement('div');
+        box.className = "video-box fade-in";
 
-      if (video.links?.length) {
-        video.links.forEach(link => {
-          const label = link.label || link.quality;
-          const url = link.url || link.link;
-          if (url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.ogg')) {
-            div.innerHTML += `
-              <div class="ratio ratio-16x9 mt-2">
-                <video controls>
-                  <source src="${url}" type="video/mp4">
-                  متصفحك لا يدعم تشغيل الفيديو.
-                </video>
-              </div>
-              <p class="mt-2 text-muted">Quality: ${label}</p>
+        let html = `<h5>${video.video_name}</h5>`;
+
+        (video.links || []).forEach(link => {
+          let label = link.label || link.quality;
+          let url = link.url || link.link;
+
+          if (url.endsWith(".mp4")) {
+            html += `
+              <video controls class="mt-2">
+                <source src="${url}" type="video/mp4">
+              </video>
+              <p class="text-muted mt-2">${label}</p>
             `;
           } else {
-            div.innerHTML += `
-              <p><a href="${url}" target="_blank" class="link-light">🔗 ${label}</a></p>
-            `;
+            html += `<p><a href="${url}" target="_blank" class="text-info">🔗 ${label}</a></p>`;
           }
         });
-      } else {
-        div.innerHTML += '<p class="text-muted">No links available.</p>';
-      }
 
+        box.innerHTML = html;
+        contentDiv.appendChild(box);
+      });
+    }
+
+    function makeCard(text, action) {
+      const div = document.createElement('div');
+      div.className = 'cardx fade-in';
+      div.textContent = text;
+      div.onclick = action;
       contentDiv.appendChild(div);
-    });
-  }
+    }
   </script>
+
 </body>
 </html>
